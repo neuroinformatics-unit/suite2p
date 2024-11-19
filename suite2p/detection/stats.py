@@ -49,6 +49,19 @@ class EllipseData(NamedTuple):
         return aspect_ratio(width=ry, height=rx)
 
 
+def compute_default_rsort():
+    """
+    Returns sorted distance kernel for default radius of 30.
+    Used as default value for ROI.rsort.
+    Necessary to avoid mutable default value in dataclass.
+
+    Returns
+    -------
+    np.ndarray
+        Sorted distance kernel.
+    """
+    return np.sort(distance_kernel(radius=30).flatten())
+
 @dataclass(frozen=True)
 class ROI:
     ypix: np.ndarray
@@ -56,8 +69,8 @@ class ROI:
     lam: np.ndarray
     med: np.ndarray
     do_crop: bool
-    rsort: np.ndarray = field(default=np.sort(distance_kernel(radius=30).flatten()),
-                              repr=False)
+    rsort: np.ndarray = field(default_factory=compute_default_rsort, repr=False)
+    
 
     def __post_init__(self):
         """Validate inputs."""
