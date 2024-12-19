@@ -365,14 +365,15 @@ def normalize_reference_image(refImg):
         rmaxs = []
         for rimg in refImg:
             rmin, rmax = np.int16(np.percentile(rimg,
-                                                1)), np.int16(np.percentile(rimg, 99))
+                                                95)), np.int16(np.percentile(rimg, 100))
             rimg[:] = np.clip(rimg, rmin, rmax)
             rmins.append(rmin)
             rmaxs.append(rmax)
         return refImg, rmins, rmaxs
     else:
+        print("b")
         rmin, rmax = np.int16(np.percentile(refImg,
-                                            1)), np.int16(np.percentile(refImg, 99))
+                                            95)), np.int16(np.percentile(refImg, 100))
         refImg = np.clip(refImg, rmin, rmax)
         return refImg, rmin, rmax
 
