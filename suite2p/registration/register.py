@@ -359,21 +359,22 @@ def shift_frames(frames, yoff, xoff, yoff1, xoff1, blocks=None, ops=default_ops(
     return frames
 
 
-def normalize_reference_image(refImg):
+def normalize_reference_image(refImg, ops):
+    min_percentile = ops.get('refImg_min_percentile', 1)
+    max_percentile = ops.get('refImg_max_percentile', 99)
     if isinstance(refImg, list):
         rmins = []
         rmaxs = []
         for rimg in refImg:
             rmin, rmax = np.int16(np.percentile(rimg,
-                                                95)), np.int16(np.percentile(rimg, 100))
+                                                min_percentile)), np.int16(np.percentile(rimg, max_percentile))
             rimg[:] = np.clip(rimg, rmin, rmax)
             rmins.append(rmin)
             rmaxs.append(rmax)
         return refImg, rmins, rmaxs
     else:
-        print("b")
         rmin, rmax = np.int16(np.percentile(refImg,
-                                            95)), np.int16(np.percentile(refImg, 100))
+                                            min_percentile)), np.int16(np.percentile(refImg, max_percentile))
         refImg = np.clip(refImg, rmin, rmax)
         return refImg, rmin, rmax
 
@@ -422,7 +423,7 @@ def compute_reference_and_register_frames(f_align_in, f_align_out=None, refImg=N
     # normalize reference image
     refImg_orig = refImg.copy()
     if ops.get("norm_frames", False):
-        refImg, rmin, rmax = normalize_reference_image(refImg)
+        refImg, rmin, rmax = normalize_reference_image(refImg, ops)
     else:
         if nZ == 1:
             rmin, rmax = -np.inf, np.inf

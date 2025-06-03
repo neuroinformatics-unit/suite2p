@@ -86,6 +86,8 @@ def default_ops():
         "norm_frames": True,  # normalize frames when detecting shifts
         "force_refImg": False,  # if True, use refImg stored in ops if available
         "pad_fft": False,  # if True, pads image during FFT part of registration
+        "refImg_min_percentile": 1,  # minimum percentile for reference image normalization
+        "refImg_max_percentile": 99,  # maximum percentile for reference image normalization
 
         # non rigid registration settings
         "nonrigid": True,  # whether to use nonrigid registration
