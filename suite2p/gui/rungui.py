@@ -93,7 +93,8 @@ class RunWindow(QDialog):
         self.intkeys = [
             "nplanes", "nchannels", "functional_chan", "align_by_chan", "nimg_init",
             "batch_size", "max_iterations", "nbinned", "inner_neuropil_radius",
-            "min_neuropil_pixels", "spatial_scale", "do_registration", "anatomical_only"
+            "min_neuropil_pixels", "spatial_scale", "do_registration", "anatomical_only",
+            "refImg_min_percentile", "refImg_max_percentile"
         ]
         self.boolkeys = [
             "delete_bin", "move_bin", "do_bidiphase", "reg_tif", "reg_tif_chan2",
@@ -114,6 +115,7 @@ class RunWindow(QDialog):
         regkeys = [
             "do_registration", "align_by_chan", "nimg_init", "batch_size",
             "smooth_sigma", "smooth_sigma_time", "maxregshift", "th_badframes",
+            "refImg_min_percentile", "refImg_max_percentile",
             "keep_movie_raw", "two_step_registration"
         ]
         nrkeys = [["nonrigid", "block_size", "snr_thresh", "maxregshiftNR"],
@@ -164,6 +166,8 @@ class RunWindow(QDialog):
             "gaussian smoothing in time, useful for low SNR data",
             "max allowed registration shift, as a fraction of frame max(width and height)",
             "this parameter determines which frames to exclude when determining cropped frame size - set it smaller to exclude more frames",
+            "minimum percentile for reference image normalization (used when building reference image)",
+            "maximum percentile for reference image normalization (used when building reference image)",
             "if 1, unregistered binary is kept in a separate file data_raw.bin",
             "run registration twice (useful if data is really noisy), *keep_movie_raw must be 1*",
             "whether to use nonrigid registration (splits FOV into blocks of size block_size)",
@@ -219,16 +223,27 @@ class RunWindow(QDialog):
         self.layout.addWidget(saveOps, 3, 4, 1, 2)
         self.layout.addWidget(QLabel(""), 4, 4, 1, 2)
         self.layout.addWidget(QLabel("Load example ops"), 5, 4, 1, 2)
-        for k in range(3):
-            qw = QPushButton("Save ops to file")
-        #saveOps.clicked.connect(self.save_ops)
-        self.opsbtns = QButtonGroup(self)
+        # Restore opsstr and self.opsname definitions
         opsstr = ["1P imaging", "dendrites/axons"]
         self.opsname = ["1P", "dendrite"]
+        self.opsbtns = QButtonGroup(self)
         for b in range(len(opsstr)):
             btn = OpsButton(b, opsstr[b], self)
             self.opsbtns.addButton(btn, b)
             self.layout.addWidget(btn, 6 + b, 4, 1, 2)
+        # Add vertical spacing and a title for batch buttons
+        self.layout.addWidget(QLabel(""), 8, 4, 1, 4)  # Spacer row
+        batchTitle = QLabel("Batch Processing")
+        batchTitle.setFont(QtGui.QFont("Arial", 10, QtGui.QFont.Bold))
+        self.layout.addWidget(batchTitle, 9, 4, 1, 4)
+        self.listOps = QPushButton("save settings and\n add more (batch)")
+        self.listOps.clicked.connect(self.add_batch)
+        self.layout.addWidget(self.listOps, 10, 4, 1, 2)
+        self.listOps.setEnabled(False)
+        self.removeOps = QPushButton("remove last added")
+        self.removeOps.clicked.connect(self.remove_ops)
+        self.layout.addWidget(self.removeOps, 11, 4, 1, 2)
+        self.removeOps.setEnabled(False)
         l = 0
         self.keylist = []
         self.editlist = []
@@ -343,15 +358,6 @@ class RunWindow(QDialog):
         self.cleanButton.clicked.connect(self.clean_script)
         self.cleanLabel = QLabel("")
         self.layout.addWidget(self.cleanLabel, n0, 4, 1, 12)
-        #n0+=1
-        self.listOps = QPushButton("save settings and\n add more (batch)")
-        self.listOps.clicked.connect(self.add_batch)
-        self.layout.addWidget(self.listOps, n0, 12, 1, 2)
-        self.listOps.setEnabled(False)
-        self.removeOps = QPushButton("remove last added")
-        self.removeOps.clicked.connect(self.remove_ops)
-        self.layout.addWidget(self.removeOps, n0, 14, 1, 2)
-        self.removeOps.setEnabled(False)
         self.odata = []
         self.n_batch = 15
         for n in range(self.n_batch):
