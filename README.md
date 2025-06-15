@@ -29,7 +29,7 @@ This repository is a fork of the official [suite2p](https://github.com/MouseLand
 
 Installation:
 ```
-pip install suite2p-NIU
+pip install suite2p-NIU[gui]
 ```
 
 Usage:
