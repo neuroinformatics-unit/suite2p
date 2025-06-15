@@ -14,6 +14,28 @@
 [![GitHub stars](https://img.shields.io/github/stars/MouseLand/suite2p?style=social)](https://github.com/MouseLand/suite2p/)
 [![GitHub forks](https://img.shields.io/github/forks/MouseLand/suite2p?style=social)](https://github.com/MouseLand/suite2p/)
 
+---
+
+## About this fork
+
+This repository is a fork of the official [suite2p](https://github.com/MouseLand/suite2p) project, maintained by the Neuroinformatics Unit.
+
+**Why this fork?**
+- Integration of custom features and options for our workflows (e.g., new GUI options, additional registration parameters, and improved compatibility with recent Python versions).
+- Rapid prototyping and bugfixes relevant to our users.
+- We regularly pull updates from upstream to stay current.
+
+**For most users, we recommend using the official [suite2p repository](https://github.com/MouseLand/suite2p) unless you specifically need features from this fork.**
+
+### Citation
+
+If you use this fork, **please cite the original suite2p paper** and acknowledge any relevant dependencies (see below).
+
+- Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandini, M., & Harris, K. D. (2016). Suite2p: beyond 10,000 neurons with standard two-photon microscopy. BioRxiv, 061507. [https://www.biorxiv.org/content/early/2017/07/20/061507]
+
+See the [Dependencies](#dependencies) section for links to other software that should be cited as appropriate.
+
+---
 
 Pipeline for processing two-photon calcium imaging data.
 Copyright (C) 2018  Howard Hughes Medical Institute Janelia Research Campus
@@ -39,13 +61,6 @@ The matlab version is available [here](https://github.com/cortex-lab/Suite2P). N
 Lectures on how suite2p works are available [here](https://youtu.be/HpL5XNtC5wU?list=PLutb8FMs2QdNqL4h4NrNhSHgLGk4sXarb).
 
 **Note on pull requests**: we accept very few pull requests due to the maintenance efforts required to support new code, and we do not accept pull requests from automated code checkers. If you wrote code that interfaces/changes suite2p behavior, a common approach would be to keep that in a fork and pull periodically from the main branch to make sure you have the latest updates.
-
-### CITATION
-
-If you use this package in your research, please cite the [paper](https://www.biorxiv.org/content/early/2017/07/20/061507):
-
-Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandini, M., & Harris, K. D. (2016). Suite2p: beyond 10,000 neurons with standard two-photon microscopy. BioRxiv, 061507.
-
 
 ## Read the Documentation at https://suite2p.readthedocs.io/
 
