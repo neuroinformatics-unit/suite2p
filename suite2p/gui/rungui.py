@@ -93,7 +93,8 @@ class RunWindow(QDialog):
         self.intkeys = [
             "nplanes", "nchannels", "functional_chan", "align_by_chan", "nimg_init",
             "batch_size", "max_iterations", "nbinned", "inner_neuropil_radius",
-            "min_neuropil_pixels", "spatial_scale", "do_registration", "anatomical_only"
+            "min_neuropil_pixels", "spatial_scale", "do_registration", "anatomical_only",
+            "refImg_min_percentile", "refImg_max_percentile"
         ]
         self.boolkeys = [
             "delete_bin", "move_bin", "do_bidiphase", "reg_tif", "reg_tif_chan2",
@@ -114,6 +115,7 @@ class RunWindow(QDialog):
         regkeys = [
             "do_registration", "align_by_chan", "nimg_init", "batch_size",
             "smooth_sigma", "smooth_sigma_time", "maxregshift", "th_badframes",
+            "refImg_min_percentile", "refImg_max_percentile",
             "keep_movie_raw", "two_step_registration"
         ]
         nrkeys = [["nonrigid", "block_size", "snr_thresh", "maxregshiftNR"],
@@ -164,6 +166,8 @@ class RunWindow(QDialog):
             "gaussian smoothing in time, useful for low SNR data",
             "max allowed registration shift, as a fraction of frame max(width and height)",
             "this parameter determines which frames to exclude when determining cropped frame size - set it smaller to exclude more frames",
+            "minimum percentile for reference image normalization (used when building reference image)",
+            "maximum percentile for reference image normalization (used when building reference image)",
             "if 1, unregistered binary is kept in a separate file data_raw.bin",
             "run registration twice (useful if data is really noisy), *keep_movie_raw must be 1*",
             "whether to use nonrigid registration (splits FOV into blocks of size block_size)",
