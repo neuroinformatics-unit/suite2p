@@ -80,13 +80,13 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="suite2p",
+    name="suite2p-NIU",
     author="Marius Pachitariu and Carsen Stringer",
     author_email="marius10p@gmail.com",
-    description="Pipeline for calcium imaging",
+    description="Pipeline for calcium imaging (fork of the original suite2p)",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/MouseLand/suite2p",
+    url="https://github.com/neuroinformatics-unit/suite2p",
     packages=setuptools.find_packages(),
     setup_requires=[
       "pytest-runner",
