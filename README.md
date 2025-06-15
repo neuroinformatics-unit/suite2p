@@ -41,7 +41,7 @@ suite2p
 
 If you use this fork, **please cite the original suite2p paper** and acknowledge any relevant dependencies (see below).
 
-- (Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandini, M., & Harris, K. D. (2016). Suite2p: beyond 10,000 neurons with standard two-photon microscopy. BioRxiv, 061507.)[https://www.biorxiv.org/content/early/2017/07/20/061507]
+- [Pachitariu, M., Stringer, C., Schröder, S., Dipoppa, M., Rossi, L. F., Carandini, M., & Harris, K. D. (2016). Suite2p: beyond 10,000 neurons with standard two-photon microscopy. BioRxiv, 061507.](https://www.biorxiv.org/content/early/2017/07/20/061507)
 
 ---
 
