@@ -21,11 +21,21 @@
 This repository is a fork of the official [suite2p](https://github.com/MouseLand/suite2p) project, maintained by the Neuroinformatics Unit.
 
 **Why this fork?**
-- Integration of custom features and options for our workflows (e.g., new GUI options, additional registration parameters, and improved compatibility with recent Python versions).
-- Rapid prototyping and bugfixes relevant to our users.
-- We regularly pull updates from upstream to stay current.
+- Compatible with the latest Python versions
+- Integration of custom features and options for our workflows (new GUI options of additional registration parameters).
+- Uses the latest Cellpose (v4)
 
 **For most users, we recommend using the official [suite2p repository](https://github.com/MouseLand/suite2p) unless you specifically need features from this fork.**
+
+Installation:
+```
+pip install suite2p-NIU
+```
+
+Usage:
+```
+suite2p
+```
 
 ### Citation
 
