@@ -99,18 +99,44 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
     return stats
 
 
-def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=0.4,
+def roi_detect(ops, mproj, mov, diameter=None, cellprob_threshold=0.0, flow_threshold=0.4,
                pretrained_model=None):
     pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
+    # If diameter is 0, set to None for Cellpose automatic estimation
+    if diameter == 0:
+        diameter = None
     model = CellposeModel(pretrained_model=pretrained_model, gpu=True if core.use_gpu() else False)
-    masks = model.eval(mproj, diameter=diameter,
+    # Call model.eval and handle both 3 and 4 return values for compatibility
+    eval_result = model.eval(mproj, diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
-                       flow_threshold=flow_threshold)[0]
+                       flow_threshold=flow_threshold)
+    if len(eval_result) == 4:
+        masks, flows, styles, diams = eval_result
+    else:
+        masks, flows, styles = eval_result
+        diams = None
+    # If Cellpose returns diameter as 0 or None, try activity-based estimation
+    print(f"Diameter is {diams}, type {type(diams)}, trying activity-based estimation...")
+    if diams is None or (isinstance(diams, (float, int)) and diams == 0):
+        print(f"Diameter is {diams}, type {type(diams)}, trying activity-based estimation...")
+        # Try to estimate diameter from activity-based detection using the full movie
+        median_diam = estimate_diameter_from_activity(ops, mov)
+        if median_diam is None:
+            print("WARNING: Both Cellpose and activity-based diameter estimation failed. median_diam is None.")
+    elif isinstance(diams, (list, np.ndarray)) and (len(diams) == 0 or diams[0] == 0):
+        print(f"Diameter is {diams}, type {type(diams)}, trying activity-based estimation...")
+        median_diam = estimate_diameter_from_activity(ops, mov)
+        if median_diam is None:
+            print("WARNING: Both Cellpose and activity-based diameter estimation failed. median_diam is None.")
+    else:
+        if isinstance(diams, (list, np.ndarray)):
+            median_diam = np.median(diams)
+        else:
+            median_diam = diams
     shape = masks.shape
     _, masks = np.unique(np.int32(masks), return_inverse=True)
     masks = masks.reshape(shape)
     centers, mask_diams = mask_centers(masks)
-    median_diam = np.median(mask_diams)
     print(">>>> %d masks detected, median diameter = %0.2f " %
           (masks.max(), median_diam))
     return masks, centers, median_diam, mask_diams.astype(np.int32)
@@ -205,7 +231,7 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, diameter=None):
         img -= gaussian_filter(img, diameter[1] * ops["spatial_hp_cp"])
 
     masks, centers, median_diam, mask_diams = roi_detect(
-        img, diameter=diameter[1], flow_threshold=ops["flow_threshold"],
+        ops, img, mov, diameter=diameter[1], flow_threshold=ops["flow_threshold"],
         cellprob_threshold=ops["cellprob_threshold"],
         pretrained_model=ops["pretrained_model"])
     if rescale != 1.0:
@@ -227,6 +253,33 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, diameter=None):
     ops.update(new_ops)
 
     return stats
+
+
+def estimate_diameter_from_activity(ops, mov, mproj=None):
+    """Estimate diameter using activity-based detection (anatomical_only == 0)."""
+    from .detect import select_rois
+    from .utils import mask_stats
+    ops_copy = ops.copy()
+    ops_copy["anatomical_only"] = 0
+    try:
+        # Use the full movie for activity-based detection
+        stat = select_rois(ops_copy, mov, sparse_mode=ops_copy.get("sparse_mode", True))
+        if len(stat) > 0:
+            # Estimate diameter for each ROI
+            diams = []
+            for s in stat:
+                mask = np.zeros((mov.shape[1], mov.shape[2]), dtype=bool)
+                mask[s["ypix"], s["xpix"]] = True
+                _, _, diam = mask_stats(mask)
+                diams.append(diam)
+            median_diam = np.median(diams)
+            return median_diam
+        else:
+            print("Activity-based diameter estimation failed: no ROIs were found -- check registered binary and maybe change spatial scale")
+            return None
+    except Exception as e:
+        print(f"Activity-based diameter estimation failed: {e}")
+        return None
 
 
 # def run_assist():

@@ -81,7 +81,8 @@ def intensity_ratio(ops, stats):
 
 def cellpose_overlap(stats, mimg2):
     from . import anatomical
-    masks = anatomical.roi_detect(mimg2)[0]
+    # Pass None for ops if not available
+    masks = anatomical.roi_detect(None, mimg2, None)[0]
     Ly, Lx = masks.shape
     redstats = np.zeros((len(stats), 2),
                         np.float32)  #changed the size of preallocated space
