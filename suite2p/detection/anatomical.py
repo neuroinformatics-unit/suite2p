@@ -110,29 +110,18 @@ def roi_detect(ops, mproj, mov, diameter=None, cellprob_threshold=0.0, flow_thre
     eval_result = model.eval(mproj, diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
                        flow_threshold=flow_threshold)
+    
     if len(eval_result) == 4:
         masks, flows, styles, diams = eval_result
-    else:
-        masks, flows, styles = eval_result
-        diams = None
-    # If Cellpose returns diameter as 0 or None, try activity-based estimation
-    print(f"Diameter is {diams}, type {type(diams)}, trying activity-based estimation...")
-    if diams is None or (isinstance(diams, (float, int)) and diams == 0):
-        print(f"Diameter is {diams}, type {type(diams)}, trying activity-based estimation...")
-        # Try to estimate diameter from activity-based detection using the full movie
-        median_diam = estimate_diameter_from_activity(ops, mov)
-        if median_diam is None:
-            print("WARNING: Both Cellpose and activity-based diameter estimation failed. median_diam is None.")
-    elif isinstance(diams, (list, np.ndarray)) and (len(diams) == 0 or diams[0] == 0):
-        print(f"Diameter is {diams}, type {type(diams)}, trying activity-based estimation...")
-        median_diam = estimate_diameter_from_activity(ops, mov)
-        if median_diam is None:
-            print("WARNING: Both Cellpose and activity-based diameter estimation failed. median_diam is None.")
-    else:
         if isinstance(diams, (list, np.ndarray)):
             median_diam = np.median(diams)
         else:
             median_diam = diams
+    else:
+        masks, flows, styles = eval_result
+        print(f"Estimating diameter from activity-based detection")
+        median_diam = estimate_diameter_from_activity(ops, mov)
+    
     shape = masks.shape
     _, masks = np.unique(np.int32(masks), return_inverse=True)
     masks = masks.reshape(shape)
@@ -220,11 +209,11 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, diameter=None):
                   diameter[1])
         else:
             print(
-                "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose"
+                "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose if possible"
             )
     else:
         print(
-            "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
+            "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose if possible")
 
     if ops.get("spatial_hp_cp", 0):
         img = np.clip(normalize99(img), 0, 1)
