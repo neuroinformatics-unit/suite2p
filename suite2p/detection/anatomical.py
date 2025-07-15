@@ -14,6 +14,7 @@ import os
 
 from . import utils
 from .stats import roi_stats
+from .detect import select_rois
 
 
 def mask_centers(masks):
@@ -46,7 +47,16 @@ def patch_detect(patches, diam):
     batch_size = 8 * 224 // ly
     tic = time.time()
     for j in np.arange(0, npatches, batch_size):
-        y = model.net(imgs[j:j + batch_size])[0]
+        # Maintain compatibility with both Cellpose 3 and 4
+        if hasattr(model, 'net'):
+            # Cellpose 4
+            y = model.net(imgs[j:j + batch_size])[0]
+        elif hasattr(model, 'cp') and hasattr(model.cp, 'network'):
+            # Cellpose 3
+            y = model.cp.network(imgs[j:j + batch_size])[0]
+        else:
+            raise AttributeError("Could not find network attribute in Cellpose model - unsupported Cellpose version")
+        
         y = y[:, :, ysub[0]:ysub[-1] + 1, xsub[0]:xsub[-1] + 1]
         y = y.asnumpy()
         for i, yi in enumerate(y):
@@ -99,18 +109,33 @@ def refine_masks(stats, patches, seeds, diam, Lyc, Lxc):
     return stats
 
 
-def roi_detect(mproj, diameter=None, cellprob_threshold=0.0, flow_threshold=0.4,
+def roi_detect(ops, mproj, mov, diameter=None, cellprob_threshold=0.0, flow_threshold=0.4,
                pretrained_model=None):
     pretrained_model = "cpsam" if pretrained_model is None else pretrained_model
+    # If diameter is 0, set to None for Cellpose automatic estimation
+    if diameter == 0:
+        diameter = None
     model = CellposeModel(pretrained_model=pretrained_model, gpu=True if core.use_gpu() else False)
-    masks = model.eval(mproj, diameter=diameter,
+    # Call model.eval and handle both 3 and 4 return values for compatibility
+    eval_result = model.eval(mproj, diameter=diameter,
                        cellprob_threshold=cellprob_threshold,
-                       flow_threshold=flow_threshold)[0]
+                       flow_threshold=flow_threshold)
+    
+    if len(eval_result) == 4:
+        masks, flows, styles, diams = eval_result
+        if isinstance(diams, (list, np.ndarray)):
+            median_diam = np.median(diams)
+        else:
+            median_diam = diams
+    else:
+        masks, flows, styles = eval_result
+        print(f"Estimating diameter from activity-based detection")
+        median_diam = estimate_diameter_from_activity(ops, mov)
+    
     shape = masks.shape
     _, masks = np.unique(np.int32(masks), return_inverse=True)
     masks = masks.reshape(shape)
     centers, mask_diams = mask_centers(masks)
-    median_diam = np.median(mask_diams)
     print(">>>> %d masks detected, median diameter = %0.2f " %
           (masks.max(), median_diam))
     return masks, centers, median_diam, mask_diams.astype(np.int32)
@@ -194,18 +219,18 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, diameter=None):
                   diameter[1])
         else:
             print(
-                "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose"
+                "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose if possible"
             )
     else:
         print(
-            "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose")
+            "!NOTE! diameter set to 0 or None, diameter will be estimated by cellpose if possible")
 
     if ops.get("spatial_hp_cp", 0):
         img = np.clip(normalize99(img), 0, 1)
         img -= gaussian_filter(img, diameter[1] * ops["spatial_hp_cp"])
 
     masks, centers, median_diam, mask_diams = roi_detect(
-        img, diameter=diameter[1], flow_threshold=ops["flow_threshold"],
+        ops, img, mov, diameter=diameter[1], flow_threshold=ops["flow_threshold"],
         cellprob_threshold=ops["cellprob_threshold"],
         pretrained_model=ops["pretrained_model"])
     if rescale != 1.0:
@@ -227,6 +252,33 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, diameter=None):
     ops.update(new_ops)
 
     return stats
+
+
+def estimate_diameter_from_activity(ops, mov):
+    """Estimate diameter using activity-based detection (anatomical_only == 0)."""
+    
+    
+    ops_copy = ops.copy()
+    ops_copy["anatomical_only"] = 0
+    try:
+        # Use the full movie for activity-based detection
+        stat = select_rois(ops_copy, mov, sparse_mode=ops_copy.get("sparse_mode", True))
+        if len(stat) > 0:
+            # Estimate diameter for each ROI
+            diams = []
+            for s in stat:
+                mask = np.zeros((mov.shape[1], mov.shape[2]), dtype=bool)
+                mask[s["ypix"], s["xpix"]] = True
+                _, _, diam = utils.mask_stats(mask)
+                diams.append(diam)
+            median_diam = np.median(diams)
+            return median_diam
+        else:
+            print("Activity-based diameter estimation failed: no ROIs were found -- check registered binary and maybe change spatial scale")
+            return None
+    except Exception as e:
+        print(f"Activity-based diameter estimation failed: {e}")
+        return None
 
 
 # def run_assist():
