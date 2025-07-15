@@ -14,6 +14,7 @@ import os
 
 from . import utils
 from .stats import roi_stats
+from .detect import select_rois
 
 
 def mask_centers(masks):
@@ -253,10 +254,10 @@ def select_rois(ops: Dict[str, Any], mov: np.ndarray, diameter=None):
     return stats
 
 
-def estimate_diameter_from_activity(ops, mov, mproj=None):
+def estimate_diameter_from_activity(ops, mov):
     """Estimate diameter using activity-based detection (anatomical_only == 0)."""
-    from .detect import select_rois
-    from .utils import mask_stats
+    
+    
     ops_copy = ops.copy()
     ops_copy["anatomical_only"] = 0
     try:
@@ -268,7 +269,7 @@ def estimate_diameter_from_activity(ops, mov, mproj=None):
             for s in stat:
                 mask = np.zeros((mov.shape[1], mov.shape[2]), dtype=bool)
                 mask[s["ypix"], s["xpix"]] = True
-                _, _, diam = mask_stats(mask)
+                _, _, diam = utils.mask_stats(mask)
                 diams.append(diam)
             median_diam = np.median(diams)
             return median_diam
