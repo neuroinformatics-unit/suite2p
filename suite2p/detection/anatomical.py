@@ -46,7 +46,16 @@ def patch_detect(patches, diam):
     batch_size = 8 * 224 // ly
     tic = time.time()
     for j in np.arange(0, npatches, batch_size):
-        y = model.net(imgs[j:j + batch_size])[0]
+        # Maintain compatibility with both Cellpose 3 and 4
+        if hasattr(model, 'net'):
+            # Cellpose 4
+            y = model.net(imgs[j:j + batch_size])[0]
+        elif hasattr(model, 'cp') and hasattr(model.cp, 'network'):
+            # Cellpose 3
+            y = model.cp.network(imgs[j:j + batch_size])[0]
+        else:
+            raise AttributeError("Could not find network attribute in Cellpose model - unsupported Cellpose version")
+        
         y = y[:, :, ysub[0]:ysub[-1] + 1, xsub[0]:xsub[-1] + 1]
         y = y.asnumpy()
         for i, yi in enumerate(y):
