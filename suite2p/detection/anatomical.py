@@ -48,14 +48,16 @@ def patch_detect(patches, diam):
     tic = time.time()
     for j in np.arange(0, npatches, batch_size):
         # Maintain compatibility with both Cellpose 3 and 4
-        if hasattr(model, 'net'):
-            # Cellpose 4
+        # Use try-except instead of hasattr for Numba compatibility
+        try:
+            # Try Cellpose 4 first
             y = model.net(imgs[j:j + batch_size])[0]
-        elif hasattr(model, 'cp') and hasattr(model.cp, 'network'):
-            # Cellpose 3
-            y = model.cp.network(imgs[j:j + batch_size])[0]
-        else:
-            raise AttributeError("Could not find network attribute in Cellpose model - unsupported Cellpose version")
+        except AttributeError:
+            try:
+                # Try Cellpose 3
+                y = model.cp.network(imgs[j:j + batch_size])[0]
+            except AttributeError:
+                raise AttributeError("Could not find network attribute in Cellpose model - unsupported Cellpose version")
         
         y = y[:, :, ysub[0]:ysub[-1] + 1, xsub[0]:xsub[-1] + 1]
         y = y.asnumpy()
