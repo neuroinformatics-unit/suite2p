@@ -136,8 +136,12 @@ def roi_detect(ops, mproj, mov, diameter=None, cellprob_threshold=0.0, flow_thre
     _, masks = np.unique(np.int32(masks), return_inverse=True)
     masks = masks.reshape(shape)
     centers, mask_diams = mask_centers(masks)
-    print(">>>> %d masks detected, median diameter = %0.2f " %
-          (masks.max(), median_diam))
+    if median_diam is not None:
+        print(">>>> %d masks detected, median diameter = %0.2f " %
+              (masks.max(), median_diam))
+    else:
+        print(">>>> %d masks detected, median diameter = None (estimation failed)" %
+              masks.max())
     return masks, centers, median_diam, mask_diams.astype(np.int32)
 
 
@@ -262,7 +266,7 @@ def estimate_diameter_from_activity(ops, mov):
     ops_copy["anatomical_only"] = 0
     try:
         # Use the full movie for activity-based detection
-        stat = select_rois(ops_copy, mov, sparse_mode=ops_copy.get("sparse_mode", True))
+        stat = select_rois(ops_copy, mov)
         if len(stat) > 0:
             # Estimate diameter for each ROI
             diams = []
